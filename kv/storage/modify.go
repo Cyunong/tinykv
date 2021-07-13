@@ -17,6 +17,7 @@ type Delete struct {
 }
 
 func (m *Modify) Key() []byte {
+	// 类型断言检查接口类型变量所持有的值是否实现了期望的接口或者具体的类型
 	switch m.Data.(type) {
 	case Put:
 		return m.Data.(Put).Key
