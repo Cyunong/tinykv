@@ -35,7 +35,7 @@ func NewServer(storage storage.Storage) *Server {
 
 // The below functions are Server's gRPC API (implements TinyKvServer).
 
-// Raw API
+// Raw API.
 func (server *Server) RawGet(_ context.Context, req *kvrpcpb.RawGetRequest) (*kvrpcpb.RawGetResponse, error) {
 	// Your Code Here (1).
 	key := req.GetKey()
@@ -127,10 +127,9 @@ func (server *Server) RawScan(_ context.Context, req *kvrpcpb.RawScanRequest) (*
 		}
 		kvs = append(kvs, &pair)
 		iterator.Next()
-
 	}
 	response := &kvrpcpb.RawScanResponse{
-		Kvs:   kvs,
+		Kvs: kvs,
 	}
 	if err != nil {
 		response.Error = err.Error()

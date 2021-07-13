@@ -80,7 +80,7 @@ func (s *StandAloneStorageReader) GetCF(cf string, key []byte) ([]byte, error) {
 	if err == badger.ErrKeyNotFound {
 		return nil, nil
 	}
-	return  value, err
+	return value, err
 }
 
 func (s *StandAloneStorageReader) IterCF(cf string) engine_util.DBIterator {
