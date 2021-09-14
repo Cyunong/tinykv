@@ -64,11 +64,12 @@ func newLog(storage Storage) *RaftLog {
 	firstIndex, _ := storage.FirstIndex()
 
 	entries, _ := storage.Entries(firstIndex, lastIndex+1)
+	hardState, _, _ := storage.InitialState()
 	return &RaftLog{
 		storage:   storage,
 		entries:   entries,
-		committed: lastIndex,
-		applied:   lastIndex,
+		committed: hardState.Commit,
+		applied:   firstIndex - 1,
 		stabled:   lastIndex,
 	}
 }
@@ -83,29 +84,51 @@ func (l *RaftLog) maybeCompact() {
 // unstableEntries return all the unstable entries
 func (l *RaftLog) unstableEntries() []pb.Entry {
 	// Your Code Here (2A).
-	return l.entries
+	if len(l.entries) == 0 {
+		return nil
+	}
+	offset := l.stabled + 1 - l.entries[0].Index
+	return l.entries[offset:]
 }
 
 // nextEnts returns all the committed but not applied entries
 func (l *RaftLog) nextEnts() (ents []pb.Entry) {
 	// Your Code Here (2A).
+	if l.applied == l.committed {
+		return
+	}
 	firstIndex := l.entries[0].Index
 	index := l.applied - firstIndex + 1
-	return l.entries[index : l.committed-l.applied]
+	return l.entries[index : l.committed-firstIndex+1]
 }
 
 // LastIndex return the last index of the log entries
 func (l *RaftLog) LastIndex() uint64 {
 	// Your Code Here (2A).
+	if len(l.entries) == 0 {
+		return l.stabled
+	}
 	return l.entries[len(l.entries)-1].Index
 }
 
 // Term return the term of the entry in the given index
 func (l *RaftLog) Term(i uint64) (uint64, error) {
 	// Your Code Here (2A).
-	firstIndex := l.entries[0].Index
-	if i < firstIndex || i > firstIndex+uint64(len(l.entries))-1 {
+	if !IsEmptySnap(l.pendingSnapshot) {
+		if i == l.pendingSnapshot.Metadata.Index {
+			return l.pendingSnapshot.Metadata.Term, nil
+		}
+		if i < l.pendingSnapshot.Metadata.Index {
+			return 0, ErrCompacted
+		}
+		return l.storage.Term(i)
+	}
+	firstIndex, _ := l.storage.FirstIndex()
+	if i > firstIndex+uint64(len(l.entries))-1 {
 		return 0, errors.New("index out of bound")
+	}
+	if i < firstIndex {
+		return l.storage.Term(i)
 	}
 	return l.entries[i-firstIndex].Term, nil
 }
