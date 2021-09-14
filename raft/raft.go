@@ -611,7 +611,7 @@ func (r *Raft) handleAppendEntries(m pb.Message) {
 	} else {
 		first, _ = r.RaftLog.storage.FirstIndex()
 	}
-	
+
 	if !IsEmptySnap(r.RaftLog.pendingSnapshot) {
 		first = r.RaftLog.pendingSnapshot.Metadata.Index + 1
 	}
